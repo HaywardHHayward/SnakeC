@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "snake.h"
 
 void update_direction(snake_t* snake, direction_t direction) {
@@ -53,9 +54,11 @@ void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BO
     }
     coordinate_t* new_head = &board[new_y][new_x];
     if (new_head->is_snake) {
+        printf("you hit yourself dunmbass\n");
         return;
     }
     if (new_head->is_fruit) {
+        printf("real apple enjoying hours\n");
         snake->length++;
     }
     else {

@@ -33,6 +33,10 @@ int main(void) {
     print_board(board);
     update_snake(&snake, right, board);
     print_board(board);
+    update_snake(&snake, up, board);
+    print_board(board);
+    update_snake(&snake, left, board);
+    print_board(board);
     return 0;
 }
 
