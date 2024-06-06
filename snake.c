@@ -52,11 +52,19 @@ void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BO
         return;
     }
     coordinate_t* new_head = &board[new_y][new_x];
-    for (int i = 0; i < snake->length - 1; i++) {
-        if (i == 0) {
-            snake->body[0]->is_snake = false;
+    if (new_head->is_snake) {
+        return;
+    }
+    if (new_head->is_fruit) {
+        snake->length++;
+    }
+    else {
+        for (int i = 0; i < snake->length - 1; i++) {
+            if (i == 0) {
+                snake->body[0]->is_snake = false;
+            }
+            snake->body[i] = snake->body[i + 1];
         }
-        snake->body[i] = snake->body[i + 1];
     }
     snake->body[snake->length - 1] = new_head;
     new_head->is_snake = true;

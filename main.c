@@ -14,6 +14,7 @@ int main(void) {
             board[i][j].is_fruit = false;
         }
     }
+    board[2][2].is_fruit = true;
     snake_t snake;
     for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
         snake.body[i] = NULL;
@@ -29,6 +30,8 @@ int main(void) {
     update_snake(&snake, down, board);
     print_board(board);
     update_snake(&snake, down, board);
+    print_board(board);
+    update_snake(&snake, right, board);
     print_board(board);
     return 0;
 }
