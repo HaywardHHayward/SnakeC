@@ -1,7 +1,3 @@
-//
-// Created by ticta on 6/6/2024.
-//
-
 #include "snake.h"
 
 void update_direction(snake_t* snake, direction_t direction) {
@@ -49,7 +45,7 @@ void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BO
             new_x++;
             break;
     }
-    if (new_x < 0 || new_x >= BOARD_WIDTH){
+    if (new_x < 0 || new_x >= BOARD_WIDTH) {
         return;
     }
     if (new_y < 0 || new_y >= BOARD_HEIGHT) {

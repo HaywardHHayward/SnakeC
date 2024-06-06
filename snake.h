@@ -1,7 +1,3 @@
-//
-// Created by ticta on 6/6/2024.
-//
-
 #ifndef SNAKE_SNAKE_H
 #define SNAKE_SNAKE_H
 
