@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "snake.h"
-#include "rogueutil.h"
+#include "rogueutil/rogueutil.h"
 
 
 void print_board(coordinate_t board[][BOARD_WIDTH]);
