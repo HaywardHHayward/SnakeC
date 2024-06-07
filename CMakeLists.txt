@@ -5,4 +5,5 @@ set(CMAKE_C_STANDARD 17)
 
 add_executable(Snake main.c
         snake.h
-        snake.c)
+        snake.c
+        rogueutil.h)

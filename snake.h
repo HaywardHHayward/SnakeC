@@ -8,11 +8,19 @@
 #define BOARD_HEIGHT 15
 
 typedef enum direction {
-    up,
-    down,
-    left,
-    right
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
 } direction_t;
+
+typedef enum status {
+    STANDARD = 0,
+    ATE_FRUIT = 1 << 0,
+    HIT_SELF = 1 << 1,
+    HIT_WALL = 1 << 2,
+    WON_GAME = 1 << 3
+} status_t;
 
 typedef struct coordinate {
     bool is_snake;
@@ -28,7 +36,7 @@ typedef struct snake {
     direction_t direction;
 } snake_t;
 
-void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BOARD_WIDTH]);
+status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][17]);
 
 void update_direction(snake_t* snake, direction_t direction);
 

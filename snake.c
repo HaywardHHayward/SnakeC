@@ -4,23 +4,23 @@
 void update_direction(snake_t* snake, direction_t direction) {
     if (direction != snake->direction) {
         switch (snake->direction) {
-            case up:
-                if (direction != down) {
+            case UP:
+                if (direction != DOWN) {
                     snake->direction = direction;
                 }
                 break;
-            case down:
-                if (direction != up) {
+            case DOWN:
+                if (direction != UP) {
                     snake->direction = direction;
                 }
                 break;
-            case left:
-                if (direction != right) {
+            case LEFT:
+                if (direction != RIGHT) {
                     snake->direction = direction;
                 }
                 break;
-            case right:
-                if (direction != left) {
+            case RIGHT:
+                if (direction != LEFT) {
                     snake->direction = direction;
                 }
                 break;
@@ -28,40 +28,41 @@ void update_direction(snake_t* snake, direction_t direction) {
     }
 }
 
-void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BOARD_WIDTH]) {
+status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][17]) {
+    status_t status = STANDARD;
     update_direction(snake, direction);
     int16_t new_x = snake->head->x;
     int16_t new_y = snake->head->y;
     switch (snake->direction) {
-        case up:
+        case UP:
             new_y--;
             break;
-        case down:
+        case DOWN:
             new_y++;
             break;
-        case left:
+        case LEFT:
             new_x--;
             break;
-        case right:
+        case RIGHT:
             new_x++;
             break;
     }
     if (new_x < 0 || new_x >= BOARD_WIDTH) {
-        return;
+        return HIT_WALL;
     }
     if (new_y < 0 || new_y >= BOARD_HEIGHT) {
-        return;
+        return HIT_WALL;
     }
     coordinate_t* new_head = &board[new_y][new_x];
     if (new_head->is_snake) {
         printf("you hit yourself dunmbass\n");
-        return;
+        return HIT_SELF;
     }
     if (new_head->is_fruit) {
         printf("real apple enjoying hours\n");
         snake->length++;
-    }
-    else {
+        status |= ATE_FRUIT;
+    } else {
         for (int i = 0; i < snake->length - 1; i++) {
             if (i == 0) {
                 snake->body[0]->is_snake = false;
@@ -72,4 +73,8 @@ void update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BO
     snake->body[snake->length - 1] = new_head;
     new_head->is_snake = true;
     snake->head = new_head;
+    if (snake->length == (BOARD_HEIGHT * BOARD_WIDTH)) {
+        status |= WON_GAME;
+    }
+    return status;
 }
