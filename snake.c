@@ -1,7 +1,7 @@
-#include <stdio.h>
 #include "snake.h"
+#include <stdio.h>
 
-void update_direction(snake_t* snake, direction_t direction) {
+void update_direction(snake_t* snake, const direction_t direction) {
     if (direction != snake->direction) {
         switch (snake->direction) {
             case UP:
@@ -28,7 +28,7 @@ void update_direction(snake_t* snake, direction_t direction) {
     }
 }
 
-status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][17]) {
+status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t board[][17]) {
     status_t status = STANDARD;
     update_direction(snake, direction);
     int16_t new_x = snake->head->x;
@@ -47,19 +47,21 @@ status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[
             new_x++;
             break;
     }
-    if (new_x < 0 || new_x >= BOARD_WIDTH) {
-        return HIT_WALL;
+    if (new_x < 0) {
+        new_x = BOARD_WIDTH - 1;
+    } else if (new_x >= BOARD_WIDTH) {
+        new_x = 0;
     }
-    if (new_y < 0 || new_y >= BOARD_HEIGHT) {
-        return HIT_WALL;
+    if (new_y < 0) {
+        new_y = BOARD_HEIGHT - 1;
+    } else if (new_y >= BOARD_HEIGHT) {
+        new_y = 0;
     }
     coordinate_t* new_head = &board[new_y][new_x];
     if (new_head->is_snake) {
-        printf("you hit yourself dunmbass\n");
         return HIT_SELF;
     }
     if (new_head->is_fruit) {
-        printf("real apple enjoying hours\n");
         snake->length++;
         status |= ATE_FRUIT;
     } else {

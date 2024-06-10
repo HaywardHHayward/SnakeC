@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.21)
 project(Snake C)
 
 set(CMAKE_C_STANDARD 17)
@@ -6,4 +6,6 @@ set(CMAKE_C_STANDARD 17)
 add_executable(Snake main.c
         snake.h
         snake.c
-        rogueutil/rogueutil.h)
+        lib/rogueutil.h
+        lib/mtwister.c
+        lib/mtwister.c)

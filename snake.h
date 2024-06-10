@@ -1,8 +1,8 @@
 #ifndef SNAKE_SNAKE_H
 #define SNAKE_SNAKE_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define BOARD_WIDTH 17
 #define BOARD_HEIGHT 15
@@ -18,7 +18,6 @@ typedef enum status {
     STANDARD = 0,
     ATE_FRUIT = 1 << 0,
     HIT_SELF = 1 << 1,
-    HIT_WALL = 1 << 2,
     WON_GAME = 1 << 3
 } status_t;
 
