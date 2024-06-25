@@ -22,10 +22,10 @@ typedef enum status {
 } status_t;
 
 typedef struct coordinate {
-    bool is_snake;
-    bool is_fruit;
-    uint8_t x;
-    uint8_t y;
+    bool is_snake : 1;
+    bool is_fruit : 1;
+    uint8_t x : 5;
+    uint8_t y : 4;
 } coordinate_t;
 
 typedef struct snake {
@@ -39,5 +39,6 @@ status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[
 
 void update_direction(snake_t* snake, direction_t direction);
 
+void print_board(coordinate_t board[][BOARD_WIDTH]);
 
 #endif //SNAKE_SNAKE_H

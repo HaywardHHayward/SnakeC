@@ -1,5 +1,4 @@
 #include "snake.h"
-#include <stdio.h>
 
 void update_direction(snake_t* snake, const direction_t direction) {
     if (direction != snake->direction) {
