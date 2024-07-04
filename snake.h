@@ -15,30 +15,33 @@ typedef enum direction {
 } direction_t;
 
 typedef enum status {
-    STANDARD = 0,
+    STANDARD  = 0,
     ATE_FRUIT = 1 << 0,
-    HIT_SELF = 1 << 1,
-    WON_GAME = 1 << 3
+    HIT_SELF  = 1 << 1,
+    WON_GAME  = 1 << 3
 } status_t;
 
 typedef struct coordinate {
     bool is_snake : 1;
     bool is_fruit : 1;
-    uint8_t x : 5;
-    uint8_t y : 4;
+    uint8_t x : 5; // 5 bits needed to have a width of 17
+    uint8_t y : 4; // 4 bits needed to have a height of 15
 } coordinate_t;
+
+union coordinate_rep {
+    coordinate_t coord;
+    uint16_t rep;
+};
 
 typedef struct snake {
     coordinate_t* body[BOARD_HEIGHT * BOARD_WIDTH];
     coordinate_t* head;
-    uint8_t length;
     direction_t direction;
+    uint16_t length;
 } snake_t;
 
-status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][17]);
+status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BOARD_WIDTH]);
 
 void update_direction(snake_t* snake, direction_t direction);
-
-void print_board(coordinate_t board[][BOARD_WIDTH]);
 
 #endif //SNAKE_SNAKE_H

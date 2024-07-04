@@ -59,7 +59,8 @@ int main(void) {
                 == KEY_RIGHT) {
                 key_pressed = buffer_pressed;
             }
-            const int frame_delay = (frame % 3 == 0) ? 16 : 17;
+            const int frame_delay = frame % 3 == 0 ? 16 : 17;
+            // this essentially makes frame_delay 16.666 repeating, making it about 60fps
             msleep(frame_delay);
         }
         switch (key_pressed) {
