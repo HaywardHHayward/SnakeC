@@ -1,24 +1,35 @@
+#include <curses.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 #include "snake.h"
 #include "lib/mtwister.h"
-#include "lib/rogueutil.h"
 
 
 void print_board(coordinate_t board[][BOARD_WIDTH]);
 
 int gen_rand_range(int min, int max, MTRand* seed);
 
-key_code nb_getkey() {
+/*key_code nb_getkey() {
     if (kbhit()) {
         return getkey();
     }
     return 0;
+}*/
+
+int main() {
+    initscr();
+    raw();
+    printw("Hello world!");
+    refresh();
+    getch();
+    endwin();
+    return 0;
 }
 
-int main(void) {
+/*int main(void) {
     hidecursor();
     srand(time(NULL));
     MTRand seed = seedRand((uint32_t)rand());
@@ -100,10 +111,9 @@ int main(void) {
     getchar();
     showcursor();
     return 0;
-}
+}*/
 
 void print_board(coordinate_t board[][BOARD_WIDTH]) {
-    cls();
     char output[(2 * BOARD_WIDTH + 1) * BOARD_HEIGHT + 1];
     int index = 0;
     for (int row = 0; row < BOARD_HEIGHT; row++) {
