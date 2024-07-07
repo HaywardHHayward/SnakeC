@@ -10,14 +10,19 @@ else ()
     include_directories(${CURSES_INCLUDE_DIRS})
 endif ()
 
+find_package(Threads REQUIRED)
+
 add_executable(Snake main.c
         snake.h
         snake.c
-        lib/rogueutil.h
         lib/mtwister.c)
 
 if (WIN32 OR MSVC)
     target_link_libraries(Snake PRIVATE PDCurses)
 else ()
     target_link_libraries(Snake ${CURSES_LIBRARIES})
+endif ()
+
+if (CMAKE_USE_PTHREADS_INIT)
+    target_link_libraries(Snake Threads::Threads)
 endif ()

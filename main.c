@@ -12,6 +12,12 @@ void print_board(coordinate_t board[][BOARD_WIDTH]);
 
 int gen_rand_range(int min, int max, MTRand* seed);
 
+void* input_loop(void* args);
+
+void* initialize_windows(void* args);
+
+static int current_key = ERR;
+
 /*key_code nb_getkey() {
     if (kbhit()) {
         return getkey();
@@ -20,13 +26,51 @@ int gen_rand_range(int min, int max, MTRand* seed);
 }*/
 
 int main() {
-    initscr();
-    raw();
-    printw("Hello world!");
-    refresh();
-    getch();
+    pthread_t input_thread, window_thread;
+    void* window_return = NULL;
+    pthread_create(&window_thread, NULL, initialize_windows, NULL);
+    pthread_join(window_thread, &window_return);
+    WINDOW** window_result = window_return;
+    WINDOW* snake_window = window_result[1];
+    WINDOW* game_window = window_result[0];
+    free(window_result);
+    wprintw(snake_window, "Hello world!");
+    wrefresh(game_window);
+    void* args = game_window;
+    pthread_create(&input_thread, NULL, input_loop, args);
+    pthread_join(input_thread, NULL);
+    delwin(snake_window);
+    delwin(game_window);
     endwin();
     return 0;
+}
+
+void* initialize_windows(void* args) {
+    initscr();
+    raw();
+    nodelay(stdscr, true);
+    noecho();
+    WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, 0, 0);
+    WINDOW* snake_window = derwin(game_window, BOARD_HEIGHT, BOARD_WIDTH * 2, 1, 1);
+    box(game_window, 0, 0);
+    WINDOW** window = calloc(sizeof (WINDOW*), 2);
+    window[0] = game_window;
+    window[1] = snake_window;
+    void* return_value = (void*)window;
+    return return_value;
+}
+
+void* input_loop(void* args) {
+    WINDOW* window = (WINDOW*)args;
+    while(true){
+        int key = wgetch(window);
+        if (key != ERR && key != KEY_MOUSE) {
+            current_key = key;
+        }
+        if (current_key != ERR){
+            pthread_exit(NULL);
+        }
+    }
 }
 
 /*int main(void) {
@@ -112,6 +156,8 @@ int main() {
     showcursor();
     return 0;
 }*/
+
+
 
 void print_board(coordinate_t board[][BOARD_WIDTH]) {
     char output[(2 * BOARD_WIDTH + 1) * BOARD_HEIGHT + 1];

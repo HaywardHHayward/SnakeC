@@ -28,11 +28,6 @@ typedef struct coordinate {
     uint8_t y : 4; // 4 bits needed to have a height of 15
 } coordinate_t;
 
-union coordinate_rep {
-    coordinate_t coord;
-    uint16_t rep;
-};
-
 typedef struct snake {
     coordinate_t* body[BOARD_HEIGHT * BOARD_WIDTH];
     coordinate_t* head;
