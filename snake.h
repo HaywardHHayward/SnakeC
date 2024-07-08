@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "lib/mtwister.h"
 
 #define BOARD_WIDTH 17
 #define BOARD_HEIGHT 15
@@ -34,6 +35,16 @@ typedef struct snake {
     direction_t direction;
     uint16_t length;
 } snake_t;
+
+typedef struct gameplay {
+    MTRand seed;
+    snake_t snake;
+    coordinate_t board[BOARD_HEIGHT][BOARD_WIDTH];
+    coordinate_t* current_fruit;
+    direction_t current_direction;
+} gameplay_data_t;
+
+
 
 status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BOARD_WIDTH]);
 
