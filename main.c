@@ -28,13 +28,6 @@ void* timer_window_func(void* win_pointer);
 
 static char current_key = ERR;
 
-/*key_code nb_getkey() {
-    if (kbhit()) {
-        return getkey();
-    }
-    return 0;
-}*/
-
 typedef struct window {
     WINDOW* game_window;
     WINDOW* snake_window;
@@ -71,41 +64,13 @@ int main() {
     pthread_mutex_init(&gameplay_mutex, NULL);
     window_data_t window_data;
     gameplay_data_t gameplay_data;
-    pthread_create(&window_init_thread, NULL, initialize_windows, &window_data);
-    coordinate_t board[BOARD_HEIGHT][BOARD_WIDTH];
-    for (int row = 0; row < BOARD_HEIGHT; ++row) {
-        for (int col = 0; col < BOARD_WIDTH; ++col) {
-            board[row][col].x = col;
-            board[row][col].y = row;
-            board[row][col].is_snake = false;
-            board[row][col].is_fruit = false;
-        }
-    }
-    coordinate_t* current_fruit;
-
-    snake_t snake = {
-            .length = 3,
-            .direction = RIGHT,
-            .body = {&board[0][0], &board[0][1], &board[0][2]},
-            .head = &board[0][2]
-    };
-    for (int i = 0; i < 3; ++i) {
-        snake.body[i]->is_snake = true;
-    }
-    direction_t direction = snake.direction;
-    while (true) {
-        const int rand_x = gen_rand_range(0, BOARD_WIDTH, &seed);
-        const int rand_y = gen_rand_range(0, BOARD_HEIGHT, &seed);
-        if (!board[rand_y][rand_x].is_snake) {
-            current_fruit = &board[rand_y][rand_x];
-            current_fruit->is_fruit = true;
-            break;
-        }
-    }
     void* window_return;
+    pthread_create(&window_init_thread, NULL, initialize_windows, &window_data);
+    pthread_create(&gameplay_init_thread, NULL, initialize_game, &gameplay_data);
     pthread_join(window_init_thread, &window_return);
     WINDOW* game_window = window_data.game_window;
     WINDOW* snake_window = window_data.snake_window;
+    pthread_join(gameplay_init_thread, NULL);
     pthread_create(&input_thread, NULL, input_loop, snake_window);
     pthread_join(input_thread, NULL);
     delwin(snake_window);
@@ -153,29 +118,29 @@ void* initialize_game(void* args) {
     coordinate_t (* board)[BOARD_HEIGHT][BOARD_WIDTH] = &gameplay->board;
     for (int row = 0; row < BOARD_HEIGHT; ++row) {
         for (int col = 0; col < BOARD_WIDTH; ++col) {
-            board[row][col]->x = col;
-            board[row][col]->y = row;
-            board[row][col]->is_snake = false;
-            board[row][col]->is_fruit = false;
+            (*board)[row][col].x = col;
+            (*board)[row][col].y = row;
+            (*board)[row][col].is_snake = false;
+            (*board)[row][col].is_fruit = false;
         }
     }
     srand(time(NULL));
     gameplay->seed = seedRand((uint32_t) rand());
     snake->length = 3;
     snake->direction = RIGHT;
-    snake->body[0] = board[0][0];
-    snake->body[1] = board[0][1];
-    snake->body[2] = board[0][2];
-    snake->head = board[0][2];
+    snake->body[0] = &(*board)[0][0];
+    snake->body[1] = &(*board)[0][1];
+    snake->body[2] = &(*board)[0][2];
+    snake->head = &(*board)[0][2];
     for (int i = 0; i < 3; ++i) {
         snake->body[i]->is_snake = true;
     }
     gameplay->current_direction = snake->direction;
     while (true) {
-        const int rand_x = gen_rand_range(0, BOARD_WIDTH, &gameplay->seed);
-        const int rand_y = gen_rand_range(0, BOARD_HEIGHT, &gameplay->seed);
-        if (!board[rand_y][rand_x]->is_snake) {
-            gameplay->current_fruit = board[rand_y][rand_x];
+        const int rand_x = gen_rand_range(16, BOARD_WIDTH, &gameplay->seed);
+        const int rand_y = gen_rand_range(14, BOARD_HEIGHT, &gameplay->seed);
+        if (!(*board)[rand_y][rand_x].is_snake) {
+            gameplay->current_fruit = &(*board)[rand_y][rand_x];
             gameplay->current_fruit->is_fruit = true;
             break;
         }
@@ -302,7 +267,7 @@ void* update_ui(void* args) {
 
 
 
-void print_board(coordinate_t board[][BOARD_WIDTH]) {
+/*void print_board(coordinate_t board[][BOARD_WIDTH]) {
     char output[(2 * BOARD_WIDTH + 1) * BOARD_HEIGHT + 1];
     int index = 0;
     for (int row = 0; row < BOARD_HEIGHT; row++) {
@@ -323,15 +288,15 @@ void print_board(coordinate_t board[][BOARD_WIDTH]) {
     }
     output[index] = '\0';
     printf("%s", output);
-}
+}*/
 
 int gen_rand_range(const int min, const int max, MTRand* seed) {
     const int difference = max - min;
     uint32_t test;
     do {
         test = genRandLong(seed);
-    } while (test >= UINT32_MAX - UINT32_MAX % difference);
-    return test % difference + min;
+    } while (test >= UINT32_MAX - (UINT32_MAX % difference));
+    return (test % difference) + min;
 }
 
 
