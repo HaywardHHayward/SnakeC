@@ -46,7 +46,7 @@ typedef struct gameplay {
 
 
 
-status_t update_snake(snake_t* snake, direction_t direction, coordinate_t board[][BOARD_WIDTH]);
+status_t update_snake(snake_t* snake, direction_t direction, coordinate_t (* board)[BOARD_HEIGHT][BOARD_WIDTH]);
 
 void update_direction(snake_t* snake, direction_t direction);
 

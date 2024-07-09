@@ -1,5 +1,4 @@
 #include <curses.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
@@ -7,16 +6,13 @@
 #include "snake.h"
 #include "lib/mtwister.h"
 
-#define MILLI_TO_NANO(x) (uint64_t)(1000000.0 * x)
 #define SECOND_TO_NANO(x) (uint64_t)(1000000000.0 * x)
-#define ENTER_KEY 10
 #define EXIT_KEY 2
+#define UPDATES_PER_SECOND 3
 
-void print_board(coordinate_t board[][BOARD_WIDTH]);
+int32_t gen_rand_range(const int32_t min, const int32_t max, MTRand* seed);
 
-int gen_rand_range(int min, int max, MTRand* seed);
-
-void* input_loop(void* win_pointer);
+void* input_loop(void* args);
 
 void* initialize_windows(void* args);
 
@@ -24,9 +20,9 @@ void* initialize_game(void* args);
 
 void* timer(void* ns_pointer);
 
-void* timer_window_func(void* win_pointer);
+void* gameplay_loop(void* args);
 
-static char current_key = ERR;
+_Noreturn void* update_ui(void* args);
 
 typedef struct window {
     WINDOW* game_window;
@@ -44,19 +40,11 @@ typedef struct full {
     mutex_list_t* mutex_list;
 } data_t;
 
-void lock_mutex(pthread_mutex_t* mutex) {
-    while (pthread_mutex_trylock(mutex) != 0) { }
-}
-
-void unlock_mutex(pthread_mutex_t* mutex) {
-    pthread_mutex_unlock(mutex);
-}
-
 int main() {
-    pthread_t input_thread, window_init_thread, gameplay_init_thread, ui_thread;
+    pthread_t input_thread, ui_thread, gameplay_thread;
     pthread_mutex_t ui_mutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t gameplay_mutex = PTHREAD_MUTEX_INITIALIZER;
-    mutex_list_t list = {
+    mutex_list_t mutex_list = {
             .ui_mutex = &ui_mutex,
             .gameplay_mutex = &gameplay_mutex
     };
@@ -64,14 +52,22 @@ int main() {
     pthread_mutex_init(&gameplay_mutex, NULL);
     window_data_t window_data;
     gameplay_data_t gameplay_data;
-    void* window_return;
-    pthread_create(&window_init_thread, NULL, initialize_windows, &window_data);
-    pthread_create(&gameplay_init_thread, NULL, initialize_game, &gameplay_data);
-    pthread_join(window_init_thread, &window_return);
+    pthread_create(&ui_thread, NULL, initialize_windows, &window_data);
+    pthread_create(&gameplay_thread, NULL, initialize_game, &gameplay_data);
+    pthread_join(ui_thread, NULL);
     WINDOW* game_window = window_data.game_window;
     WINDOW* snake_window = window_data.snake_window;
-    pthread_join(gameplay_init_thread, NULL);
-    pthread_create(&input_thread, NULL, input_loop, snake_window);
+    data_t data = {
+            .window = &window_data,
+            .gameplay = &gameplay_data,
+            .mutex_list = &mutex_list
+    };
+    pthread_join(gameplay_thread, NULL);
+    pthread_create(&input_thread, NULL, input_loop, &data);
+    pthread_create(&gameplay_thread, NULL, gameplay_loop, &data);
+    pthread_create(&ui_thread, NULL, update_ui, &data);
+    pthread_detach(gameplay_thread);
+    pthread_detach(ui_thread);
     pthread_join(input_thread, NULL);
     delwin(snake_window);
     delwin(game_window);
@@ -79,11 +75,6 @@ int main() {
     return 0;
 }
 
-/**
- * 
- * @param ns_pointer A pointer to an uint64_t specifying the amount of nanoseconds that should pass before returning
- * @return Returns nothing
- */
 void* timer(void* ns_pointer) {
     uint64_t target_ns = *(uint64_t*) ns_pointer;
     struct timespec begin_time, end_time;
@@ -101,6 +92,7 @@ void* initialize_windows(void* args) {
     initscr();
     raw();
     noecho();
+    curs_set(0);
     WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, 0, 0);
     WINDOW* snake_window = derwin(game_window, BOARD_HEIGHT, BOARD_WIDTH * 2, 1, 1);
     nodelay(snake_window, TRUE);
@@ -109,7 +101,7 @@ void* initialize_windows(void* args) {
     keypad(snake_window, TRUE);
     window->game_window = game_window;
     window->snake_window = snake_window;
-    return (void*) window;
+    return NULL;
 }
 
 void* initialize_game(void* args) {
@@ -137,8 +129,8 @@ void* initialize_game(void* args) {
     }
     gameplay->current_direction = snake->direction;
     while (true) {
-        const int rand_x = gen_rand_range(16, BOARD_WIDTH, &gameplay->seed);
-        const int rand_y = gen_rand_range(14, BOARD_HEIGHT, &gameplay->seed);
+        const int rand_x = gen_rand_range(0, BOARD_WIDTH, &gameplay->seed);
+        const int rand_y = gen_rand_range(0, BOARD_HEIGHT, &gameplay->seed);
         if (!(*board)[rand_y][rand_x].is_snake) {
             gameplay->current_fruit = &(*board)[rand_y][rand_x];
             gameplay->current_fruit->is_fruit = true;
@@ -147,38 +139,92 @@ void* initialize_game(void* args) {
     }
     return NULL;
 }
-
-/**
- * @param win_pointer A pointer to the WINDOW used for input control
- * @return Returns nothing
- */
-void* input_loop(void* win_pointer) {
-    WINDOW* window = (WINDOW*) win_pointer;
+void* input_loop(void* args) {
+    data_t* data = (data_t*) args;
+    WINDOW* window = data->window->snake_window;
+    mutex_list_t* mutex_list = data->mutex_list;
     while (true) {
+        pthread_mutex_lock(mutex_list->ui_mutex);
         int key = wgetch(window);
         if (key != ERR && key != KEY_MOUSE && key != KEY_RESIZE && key != KEY_EVENT) {
             if (key == EXIT_KEY) {
+                wrefresh(window);
+                pthread_mutex_unlock(mutex_list->ui_mutex);
                 return NULL;
             } else if (key == KEY_LEFT) {
-                wprintw(window, "Left");
+                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                data->gameplay->current_direction = LEFT;
+                pthread_mutex_unlock(mutex_list->gameplay_mutex);
             } else if (key == KEY_RIGHT) {
-                wprintw(window, "Right");
-            } else if (key == KEY_DOWN) {
-                wprintw(window, "Down");
+                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                data->gameplay->current_direction = RIGHT;
+                pthread_mutex_unlock(mutex_list->gameplay_mutex);
             } else if (key == KEY_UP) {
-                wprintw(window, "Up");
-            } else if (key == ENTER_KEY) {
-                wprintw(window, "Enter");
-            } else {
-                waddch(window, key);
+                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                data->gameplay->current_direction = UP;
+                pthread_mutex_unlock(mutex_list->gameplay_mutex);
+            } else if (key == KEY_DOWN) {
+                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                data->gameplay->current_direction = DOWN;
+                pthread_mutex_unlock(mutex_list->gameplay_mutex);
             }
         }
         wrefresh(window);
+        pthread_mutex_unlock(mutex_list->ui_mutex);
     }
 }
 
-void* update_ui(void* args) {
+_Noreturn void* update_ui(void* args) {
+    data_t* data = (data_t*) args;
+    mutex_list_t* mutex_list = data->mutex_list;
+    gameplay_data_t* gameplay_data = data->gameplay;
+    window_data_t* window_data = data->window;
+    while (true) {
+        pthread_mutex_lock(mutex_list->ui_mutex);
+        werase(window_data->snake_window);
+        pthread_mutex_lock(mutex_list->gameplay_mutex);
+        for (int i = 0; i < gameplay_data->snake.length; ++i) {
+            mvwaddch(window_data->snake_window, gameplay_data->snake.body[i]->y, gameplay_data->snake.body[i]->x * 2,
+                     'X');
+        }
+        mvwaddch(window_data->snake_window, gameplay_data->current_fruit->y, gameplay_data->current_fruit->x * 2, 'A');
+        pthread_mutex_unlock(mutex_list->gameplay_mutex);
+        wrefresh(window_data->snake_window);
+        pthread_mutex_unlock(mutex_list->ui_mutex);
+    }
+}
 
+void* gameplay_loop(void* args) {
+    data_t* data = (data_t*) args;
+    pthread_t timer_thread;
+    pthread_mutex_t* mutex = data->mutex_list->gameplay_mutex;
+    gameplay_data_t* gameplay_data = data->gameplay;
+    uint64_t target_time = SECOND_TO_NANO(1.0 / UPDATES_PER_SECOND);
+    while (true) {
+        pthread_create(&timer_thread, NULL, timer, &target_time);
+        pthread_mutex_lock(mutex);
+        const status_t status = update_snake(&gameplay_data->snake, gameplay_data->current_direction,
+                                             &gameplay_data->board);
+        if ((status & ATE_FRUIT) == ATE_FRUIT) {
+            while (true) {
+                const int rand_x = gen_rand_range(0, BOARD_WIDTH, &gameplay_data->seed);
+                const int rand_y = gen_rand_range(0, BOARD_HEIGHT, &gameplay_data->seed);
+                if (!gameplay_data->board[rand_y][rand_x].is_snake) {
+                    gameplay_data->current_fruit->is_fruit = false;
+                    gameplay_data->current_fruit = &gameplay_data->board[rand_y][rand_x];
+                    gameplay_data->current_fruit->is_fruit = true;
+                    break;
+                }
+            }
+        } else if ((status & HIT_SELF) == HIT_SELF) {
+            pthread_mutex_unlock(mutex);
+            pthread_join(timer_thread, NULL);
+            break;
+        }
+        pthread_mutex_unlock(mutex);
+        pthread_join(timer_thread, NULL);
+    }
+    return NULL;
 }
 
 /*int main(void) {
@@ -265,38 +311,13 @@ void* update_ui(void* args) {
     return 0;
 }*/
 
-
-
-/*void print_board(coordinate_t board[][BOARD_WIDTH]) {
-    char output[(2 * BOARD_WIDTH + 1) * BOARD_HEIGHT + 1];
-    int index = 0;
-    for (int row = 0; row < BOARD_HEIGHT; row++) {
-        for (int col = 0; col < BOARD_WIDTH; col++) {
-            if (board[row][col].is_snake) {
-                output[index] = 'X';
-            } else if (board[row][col].is_fruit) {
-                output[index] = 'A';
-            } else {
-                output[index] = ' ';
-            }
-            index++;
-            output[index] = ' ';
-            index++;
-        }
-        output[index] = '\n';
-        index++;
-    }
-    output[index] = '\0';
-    printf("%s", output);
-}*/
-
-int gen_rand_range(const int min, const int max, MTRand* seed) {
-    const int difference = max - min;
+int32_t gen_rand_range(const int32_t min, const int32_t max, MTRand* seed) {
+    const uint32_t difference = max - min;
     uint32_t test;
     do {
         test = genRandLong(seed);
     } while (test >= UINT32_MAX - (UINT32_MAX % difference));
-    return (test % difference) + min;
+    return (int32_t)((test % difference) + min);
 }
 
 

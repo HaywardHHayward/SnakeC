@@ -27,7 +27,7 @@ void update_direction(snake_t* snake, const direction_t direction) {
     }
 }
 
-status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t board[][BOARD_WIDTH]) {
+status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t (* board)[BOARD_HEIGHT][BOARD_WIDTH]) {
     status_t status = STANDARD;
     update_direction(snake, direction);
     int16_t new_x = snake->head->x;
@@ -56,7 +56,7 @@ status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t 
     } else if (new_y >= BOARD_HEIGHT) {
         new_y = 0;
     }
-    coordinate_t* new_head = &board[new_y][new_x];
+    coordinate_t* new_head = &(*board)[new_y][new_x];
     if (new_head->is_snake) {
         return HIT_SELF;
     }
