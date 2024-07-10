@@ -9,7 +9,6 @@
 
 typedef pthread_t thread_t;
 typedef pthread_mutex_t mutex_t;
-typedef pthread_cond_t cond_t;
 
 typedef void* thread_ret;
 
@@ -21,20 +20,19 @@ typedef void* thread_ret;
 #define mutex_lock(mut) pthread_mutex_lock(mut)
 #define mutex_unlock(mut) pthread_mutex_unlock(mut)
 
-
 #elif defined(!__STDC_NO_THREADS__)
 
 #include <threads.h>
 
 typedef thrd_t thread_t;
 typedef mtx_t mutex_t;
-typedef cnd_t cond_t;
 
 typedef thrd_start_t thread_ret;
 
 #define thread_create(thr, fun, arg) thrd_create(thr, fun, arg)
 #define thread_join(thr, arg) thrd_join(thr, arg)
 #define thread_detach(thr) thrd_detach(thr)
+
 
 #define mutex_init(mut) mtx_init(mut, mtx_plain)
 #define mutex_lock(mut) mtx_lock(mut)
@@ -51,7 +49,6 @@ typedef thrd_start_t thread_ret;
 
 typedef pthread_t thread_t;
 typedef pthread_mutex_t mutex_t;
-typedef pthread_cond_t cond_t;
 
 typedef void* thread_ret;
 
@@ -69,7 +66,6 @@ typedef void* thread_ret;
 
 typedef thrd_t thread_t;
 typedef mtx_t mutex_t;
-typedef cnd_t cond_t;
 
 typedef thrd_start_t thread_ret;
 

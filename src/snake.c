@@ -27,7 +27,7 @@ void update_direction(snake_t* snake, const direction_t direction) {
     }
 }
 
-status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t (* board)[BOARD_HEIGHT][BOARD_WIDTH]) {
+status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t (*board)[BOARD_HEIGHT][BOARD_WIDTH]) {
     status_t status = STANDARD;
     update_direction(snake, direction);
     int16_t new_x = snake->head->x;
