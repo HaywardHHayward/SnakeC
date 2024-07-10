@@ -17,11 +17,11 @@ endif ()
 
 find_package(Threads REQUIRED)
 
-add_executable(Snake main.c
-        snake.h
-        snake.c
-        lib/mtwister.c
-        thrdef.h)
+add_executable(Snake src/main.c
+        src/snake.c
+        src/threaded_fun.c
+        lib/mtwister/mtwister.c
+)
 
 if (CURSES_FOUND)
     target_link_libraries(Snake ${CURSES_LIBRARIES})

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "lib/mtwister.h"
+#include "../lib/mtwister/mtwister.h"
 
 #define BOARD_WIDTH 17
 #define BOARD_HEIGHT 15
