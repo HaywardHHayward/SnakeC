@@ -20,7 +20,8 @@ find_package(Threads REQUIRED)
 add_executable(Snake main.c
         snake.h
         snake.c
-        lib/mtwister.c)
+        lib/mtwister.c
+        thrdef.h)
 
 if (CURSES_FOUND)
     target_link_libraries(Snake ${CURSES_LIBRARIES})
@@ -28,8 +29,4 @@ else ()
     target_link_libraries(Snake PRIVATE PDCurses)
 endif ()
 
-if (CMAKE_USE_PTHREADS_INIT)
-    target_link_libraries(Snake Threads::Threads)
-else ()
-    message(FATAL_ERROR "Threading library must be pthread compatible.")
-endif ()
+target_link_libraries(Snake Threads::Threads)

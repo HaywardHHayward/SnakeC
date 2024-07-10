@@ -1,28 +1,28 @@
 #include <curses.h>
 #include <stdlib.h>
 #include <time.h>
-#include <pthread.h>
 
 #include "snake.h"
+#include "thrdef.h"
 #include "lib/mtwister.h"
 
 #define SECOND_TO_NANO(x) (uint64_t)(1000000000.0 * x)
 #define EXIT_KEY 2
 #define UPDATES_PER_SECOND 3
 
-int32_t gen_rand_range(const int32_t min, const int32_t max, MTRand* seed);
+int32_t gen_rand_range(int32_t min, int32_t max, MTRand* seed);
 
-void* input_loop(void* args);
+thread_ret input_loop(void* args);
 
-void* initialize_windows(void* args);
+thread_ret initialize_windows(void* args);
 
-void* initialize_game(void* args);
+thread_ret initialize_game(void* args);
 
-void* timer(void* ns_pointer);
+thread_ret timer(void* ns_pointer);
 
-void* gameplay_loop(void* args);
+thread_ret gameplay_loop(void* args);
 
-_Noreturn void* update_ui(void* args);
+thread_ret update_ui(void* args);
 
 typedef struct window {
     WINDOW* game_window;
@@ -30,8 +30,8 @@ typedef struct window {
 } window_data_t;
 
 typedef struct mutex {
-    pthread_mutex_t* ui_mutex;
-    pthread_mutex_t* gameplay_mutex;
+    mutex_t* ui_mutex;
+    mutex_t* gameplay_mutex;
 } mutex_list_t;
 
 typedef struct full {
@@ -41,20 +41,19 @@ typedef struct full {
 } data_t;
 
 int main() {
-    pthread_t input_thread, ui_thread, gameplay_thread;
-    pthread_mutex_t ui_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t gameplay_mutex = PTHREAD_MUTEX_INITIALIZER;
+    thread_t input_thread, ui_thread, gameplay_thread;
+    mutex_t ui_mutex, gameplay_mutex;
     mutex_list_t mutex_list = {
             .ui_mutex = &ui_mutex,
             .gameplay_mutex = &gameplay_mutex
     };
-    pthread_mutex_init(&ui_mutex, NULL);
-    pthread_mutex_init(&gameplay_mutex, NULL);
+    mutex_init(&ui_mutex);
+    mutex_init(&gameplay_mutex);
     window_data_t window_data;
     gameplay_data_t gameplay_data;
-    pthread_create(&ui_thread, NULL, initialize_windows, &window_data);
-    pthread_create(&gameplay_thread, NULL, initialize_game, &gameplay_data);
-    pthread_join(ui_thread, NULL);
+    thread_create(&ui_thread, initialize_windows, &window_data);
+    thread_create(&gameplay_thread, initialize_game, &gameplay_data);
+    thread_join(ui_thread, NULL);
     WINDOW* game_window = window_data.game_window;
     WINDOW* snake_window = window_data.snake_window;
     data_t data = {
@@ -62,20 +61,20 @@ int main() {
             .gameplay = &gameplay_data,
             .mutex_list = &mutex_list
     };
-    pthread_join(gameplay_thread, NULL);
-    pthread_create(&input_thread, NULL, input_loop, &data);
-    pthread_create(&gameplay_thread, NULL, gameplay_loop, &data);
-    pthread_create(&ui_thread, NULL, update_ui, &data);
-    pthread_detach(gameplay_thread);
-    pthread_detach(ui_thread);
-    pthread_join(input_thread, NULL);
+    thread_join(gameplay_thread, NULL);
+    thread_create(&input_thread, input_loop, &data);
+    thread_create(&gameplay_thread, gameplay_loop, &data);
+    thread_create(&ui_thread, update_ui, &data);
+    thread_detach(gameplay_thread);
+    thread_detach(ui_thread);
+    thread_join(input_thread, NULL);
     delwin(snake_window);
     delwin(game_window);
     endwin();
     return 0;
 }
 
-void* timer(void* ns_pointer) {
+thread_ret timer(void* ns_pointer) {
     uint64_t target_ns = *(uint64_t*) ns_pointer;
     struct timespec begin_time, end_time;
     timespec_get(&begin_time, TIME_UTC);
@@ -87,7 +86,7 @@ void* timer(void* ns_pointer) {
     return NULL;
 }
 
-void* initialize_windows(void* args) {
+thread_ret initialize_windows(void* args) {
     window_data_t* window = (window_data_t*) args;
     initscr();
     raw();
@@ -104,7 +103,7 @@ void* initialize_windows(void* args) {
     return NULL;
 }
 
-void* initialize_game(void* args) {
+thread_ret initialize_game(void* args) {
     gameplay_data_t* gameplay = (gameplay_data_t*) args;
     snake_t* snake = &gameplay->snake;
     coordinate_t (* board)[BOARD_HEIGHT][BOARD_WIDTH] = &gameplay->board;
@@ -139,70 +138,71 @@ void* initialize_game(void* args) {
     }
     return NULL;
 }
-void* input_loop(void* args) {
+
+thread_ret input_loop(void* args) {
     data_t* data = (data_t*) args;
     WINDOW* window = data->window->snake_window;
     mutex_list_t* mutex_list = data->mutex_list;
     while (true) {
-        pthread_mutex_lock(mutex_list->ui_mutex);
+        mutex_lock(mutex_list->ui_mutex);
         int key = wgetch(window);
         if (key != ERR && key != KEY_MOUSE && key != KEY_RESIZE && key != KEY_EVENT) {
             if (key == EXIT_KEY) {
                 wrefresh(window);
-                pthread_mutex_unlock(mutex_list->ui_mutex);
+                mutex_unlock(mutex_list->ui_mutex);
                 return NULL;
             } else if (key == KEY_LEFT) {
-                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                mutex_lock(mutex_list->gameplay_mutex);
                 data->gameplay->current_direction = LEFT;
-                pthread_mutex_unlock(mutex_list->gameplay_mutex);
+                mutex_unlock(mutex_list->gameplay_mutex);
             } else if (key == KEY_RIGHT) {
-                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                mutex_lock(mutex_list->gameplay_mutex);
                 data->gameplay->current_direction = RIGHT;
-                pthread_mutex_unlock(mutex_list->gameplay_mutex);
+                mutex_unlock(mutex_list->gameplay_mutex);
             } else if (key == KEY_UP) {
-                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                mutex_lock(mutex_list->gameplay_mutex);
                 data->gameplay->current_direction = UP;
-                pthread_mutex_unlock(mutex_list->gameplay_mutex);
+                mutex_unlock(mutex_list->gameplay_mutex);
             } else if (key == KEY_DOWN) {
-                pthread_mutex_lock(mutex_list->gameplay_mutex);
+                mutex_lock(mutex_list->gameplay_mutex);
                 data->gameplay->current_direction = DOWN;
-                pthread_mutex_unlock(mutex_list->gameplay_mutex);
+                mutex_unlock(mutex_list->gameplay_mutex);
             }
         }
         wrefresh(window);
-        pthread_mutex_unlock(mutex_list->ui_mutex);
+        mutex_unlock(mutex_list->ui_mutex);
     }
 }
 
-_Noreturn void* update_ui(void* args) {
+thread_ret update_ui(void* args) {
     data_t* data = (data_t*) args;
     mutex_list_t* mutex_list = data->mutex_list;
     gameplay_data_t* gameplay_data = data->gameplay;
     window_data_t* window_data = data->window;
     while (true) {
-        pthread_mutex_lock(mutex_list->ui_mutex);
+        mutex_lock(mutex_list->ui_mutex);
         werase(window_data->snake_window);
-        pthread_mutex_lock(mutex_list->gameplay_mutex);
+        mutex_lock(mutex_list->gameplay_mutex);
         for (int i = 0; i < gameplay_data->snake.length; ++i) {
             mvwaddch(window_data->snake_window, gameplay_data->snake.body[i]->y, gameplay_data->snake.body[i]->x * 2,
                      'X');
         }
         mvwaddch(window_data->snake_window, gameplay_data->current_fruit->y, gameplay_data->current_fruit->x * 2, 'A');
-        pthread_mutex_unlock(mutex_list->gameplay_mutex);
+        mutex_unlock(mutex_list->gameplay_mutex);
         wrefresh(window_data->snake_window);
-        pthread_mutex_unlock(mutex_list->ui_mutex);
+        mutex_unlock(mutex_list->ui_mutex);
     }
 }
 
-void* gameplay_loop(void* args) {
+thread_ret gameplay_loop(void* args) {
     data_t* data = (data_t*) args;
-    pthread_t timer_thread;
-    pthread_mutex_t* mutex = data->mutex_list->gameplay_mutex;
+    thread_t timer_thread;
+    mutex_t* mutex = data->mutex_list->gameplay_mutex;
     gameplay_data_t* gameplay_data = data->gameplay;
     uint64_t target_time = SECOND_TO_NANO(1.0 / UPDATES_PER_SECOND);
     while (true) {
-        pthread_create(&timer_thread, NULL, timer, &target_time);
-        pthread_mutex_lock(mutex);
+        thread_create(&timer_thread, timer, &target_time);
+        mutex_lock(mutex);
         const status_t status = update_snake(&gameplay_data->snake, gameplay_data->current_direction,
                                              &gameplay_data->board);
         if ((status & ATE_FRUIT) == ATE_FRUIT) {
@@ -217,12 +217,12 @@ void* gameplay_loop(void* args) {
                 }
             }
         } else if ((status & HIT_SELF) == HIT_SELF) {
-            pthread_mutex_unlock(mutex);
-            pthread_join(timer_thread, NULL);
+            mutex_unlock(mutex);
+            thread_join(timer_thread, NULL);
             break;
         }
-        pthread_mutex_unlock(mutex);
-        pthread_join(timer_thread, NULL);
+        mutex_unlock(mutex);
+        thread_join(timer_thread, NULL);
     }
     return NULL;
 }
@@ -317,7 +317,7 @@ int32_t gen_rand_range(const int32_t min, const int32_t max, MTRand* seed) {
     do {
         test = genRandLong(seed);
     } while (test >= UINT32_MAX - (UINT32_MAX % difference));
-    return (int32_t)((test % difference) + min);
+    return (int32_t) ((test % difference) + min);
 }
 
 
