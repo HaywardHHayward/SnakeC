@@ -9,7 +9,8 @@
 #define EXIT_KEY 3
 #define UPDATES_PER_SECOND 3
 
-static void copy_is_playing(mutex_t* mutex, bool playing_src, bool* playing_dst) {
+
+static void copy_is_playing(mutex_t* mutex, const bool playing_src, bool* playing_dst) {
     mutex_lock(mutex);
     *playing_dst = playing_src;
     mutex_unlock(mutex);
@@ -31,7 +32,7 @@ thread_ret timer(void* ns_pointer) {
     uint64_t elapsed_time;
     do {
         timespec_get(&end_time, TIME_UTC);
-        elapsed_time = (end_time.tv_sec - begin_time.tv_sec) * 1000000000 + (end_time.tv_nsec - begin_time.tv_nsec);
+        elapsed_time = SECOND_TO_NANO((end_time.tv_sec - begin_time.tv_sec)) + (end_time.tv_nsec - begin_time.tv_nsec);
     } while (elapsed_time < target_ns);
     return NULL;
 }
@@ -42,11 +43,11 @@ thread_ret initialize_windows(void* args) {
     raw();
     noecho();
     curs_set(0);
-    WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, 0, 0);
+    WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, (LINES - (BOARD_HEIGHT + 2)) / 2,
+                                 (COLS - (BOARD_WIDTH * 2 + 2)) / 2);
     WINDOW* snake_window = derwin(game_window, BOARD_HEIGHT, BOARD_WIDTH * 2, 1, 1);
     nodelay(snake_window, TRUE);
     box(game_window, 0, 0);
-    wrefresh(game_window);
     keypad(snake_window, TRUE);
     window_list->game_window = game_window;
     window_list->snake_window = snake_window;
@@ -103,28 +104,34 @@ thread_ret input_loop(void* args) {
         mutex_lock(mutex_list->ui_mutex);
         const int key = wgetch(window);
         if (key != ERR && key != KEY_MOUSE && key != KEY_RESIZE && key != KEY_EVENT) {
-            if (key == EXIT_KEY) {
-                wrefresh(window);
-                mutex_unlock(mutex_list->ui_mutex);
-                copy_is_playing(mutex_list->playing_mutex, false, &data->gameplay->is_playing);
-                return NULL;
-            }
-            if (key == KEY_LEFT) {
-                mutex_lock(mutex_list->gameplay_mutex);
-                data->gameplay->current_direction = LEFT;
-                mutex_unlock(mutex_list->gameplay_mutex);
-            } else if (key == KEY_RIGHT) {
-                mutex_lock(mutex_list->gameplay_mutex);
-                data->gameplay->current_direction = RIGHT;
-                mutex_unlock(mutex_list->gameplay_mutex);
-            } else if (key == KEY_UP) {
-                mutex_lock(mutex_list->gameplay_mutex);
-                data->gameplay->current_direction = UP;
-                mutex_unlock(mutex_list->gameplay_mutex);
-            } else if (key == KEY_DOWN) {
-                mutex_lock(mutex_list->gameplay_mutex);
-                data->gameplay->current_direction = DOWN;
-                mutex_unlock(mutex_list->gameplay_mutex);
+            switch (key) {
+                case EXIT_KEY:
+                    wrefresh(window);
+                    mutex_unlock(mutex_list->ui_mutex);
+                    copy_is_playing(mutex_list->playing_mutex, false, &data->gameplay->is_playing);
+                    return NULL;
+                case 'a':
+                case KEY_LEFT: mutex_lock(mutex_list->gameplay_mutex);
+                    data->gameplay->current_direction = LEFT;
+                    mutex_unlock(mutex_list->gameplay_mutex);
+                    break;
+                case 'd':
+                case KEY_RIGHT: mutex_lock(mutex_list->gameplay_mutex);
+                    data->gameplay->current_direction = RIGHT;
+                    mutex_unlock(mutex_list->gameplay_mutex);
+                    break;
+                case 'w':
+                case KEY_UP: mutex_lock(mutex_list->gameplay_mutex);
+                    data->gameplay->current_direction = UP;
+                    mutex_unlock(mutex_list->gameplay_mutex);
+                    break;
+                case 's':
+                case KEY_DOWN: mutex_lock(mutex_list->gameplay_mutex);
+                    data->gameplay->current_direction = DOWN;
+                    mutex_unlock(mutex_list->gameplay_mutex);
+                    break;
+                default:
+                    break;
             }
         }
         wrefresh(window);
@@ -186,6 +193,12 @@ thread_ret gameplay_loop(void* args) {
                 }
             }
         } else if ((status & HIT_SELF) == HIT_SELF) {
+            mutex_unlock(game_mutex);
+            copy_is_playing(data->mutex_list->playing_mutex, false, &gameplay_data->is_playing);
+            thread_join(timer_thread, NULL);
+            return NULL;
+        }
+        if ((status & WON_GAME) == WON_GAME) {
             mutex_unlock(game_mutex);
             copy_is_playing(data->mutex_list->playing_mutex, false, &gameplay_data->is_playing);
             thread_join(timer_thread, NULL);

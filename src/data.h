@@ -4,7 +4,7 @@
 #include <curses.h>
 
 #include "snake.h"
-#include "thrdef.h"
+#include "thread_port.h"
 #include "../lib/mtwister/mtwister.h"
 
 typedef struct gameplay_data {

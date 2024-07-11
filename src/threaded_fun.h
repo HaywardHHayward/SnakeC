@@ -1,7 +1,7 @@
 #ifndef SNAKE_THREADED_FUN_H
 #define SNAKE_THREADED_FUN_H
 
-#include "thrdef.h"
+#include "thread_port.h"
 #include "../lib/mtwister/mtwister.h"
 
 int32_t gen_rand_range(int32_t min, int32_t max, MTRand* seed);

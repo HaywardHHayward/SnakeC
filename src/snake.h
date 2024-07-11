@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BOARD_WIDTH 17
+#define BOARD_WIDTH 30
 #define BOARD_HEIGHT 15
 
 typedef enum direction {
@@ -24,8 +24,8 @@ typedef enum status {
 typedef struct coordinate {
     bool is_snake : 1;
     bool is_fruit : 1;
-    uint8_t x : 5; // 5 bits needed to have a width of 17
-    uint8_t y : 4; // 4 bits needed to have a height of 15
+    uint8_t y : 6;
+    uint8_t x;
 } coordinate_t;
 
 typedef struct snake {
