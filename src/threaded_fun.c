@@ -88,7 +88,7 @@ thread_ret initialize_game(void* args) {
 }
 
 thread_ret input_loop(void* args) {
-    const data_t* data = args;
+    const data_t* data = (data_t*)args;
     WINDOW* window = data->window->snake_window;
     const mutex_list_t* mutex_list = data->mutex_list;
     bool is_playing = true;
@@ -136,7 +136,7 @@ thread_ret input_loop(void* args) {
 }
 
 thread_ret update_ui(void* args) {
-    const data_t* data = args;
+    const data_t* data = (data_t*)args;
     const mutex_list_t* mutex_list = data->mutex_list;
     const gameplay_data_t* gameplay_data = data->gameplay;
     const window_data_t* window_data = data->window;
@@ -161,7 +161,7 @@ thread_ret update_ui(void* args) {
 }
 
 thread_ret gameplay_loop(void* args) {
-    const data_t* data = args;
+    const data_t* data = (data_t*)args;
     thread_t timer_thread;
     mutex_t* game_mutex = data->mutex_list->gameplay_mutex;
     gameplay_data_t* gameplay_data = data->gameplay;

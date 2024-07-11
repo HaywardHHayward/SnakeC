@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.29)
 project(PDCurses C)
 
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 17)
 
 add_library(PDCurses STATIC
         curses.h
@@ -55,13 +55,15 @@ add_library(PDCurses STATIC
         touch.c
         util.c
         window.c
-        common/acs437.h
-        common/acsgr.h
-        common/acsuni.h
-        common/iconbmp.h)
+        acs437.h
+        acsgr.h
+        acsuni.h
+        iconbmp.h)
 
 target_include_directories(PDCurses
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
