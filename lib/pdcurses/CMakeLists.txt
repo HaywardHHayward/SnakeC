@@ -55,15 +55,13 @@ add_library(PDCurses STATIC
         touch.c
         util.c
         window.c
-        acs437.h
-        acsgr.h
-        acsuni.h
-        iconbmp.h)
+        common/acs437.h
+        common/acsgr.h
+        common/acsuni.h
+        common/iconbmp.h)
 
 target_include_directories(PDCurses
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/common
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
