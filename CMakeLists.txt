@@ -20,8 +20,8 @@ find_package(Threads REQUIRED)
 add_subdirectory(lib/mtwister)
 
 add_executable(Snake src/main.c
-        src/snake.c
-        src/threaded_fun.c
+               src/snake.c
+               src/threaded_fun.c
 )
 
 if (CURSES_FOUND)

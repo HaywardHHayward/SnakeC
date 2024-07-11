@@ -6,14 +6,14 @@
 
 #define BOARD_WIDTH 30
 #define BOARD_HEIGHT 15
-#define ALL_ONES_DIRECTION 3
+#define INVALID_DIRECTION 3
+// The sum of opposite directions will always equal INVALID_DIRECTION
 
 typedef enum direction {
-    UP                = 0, //0b00
-    DOWN              = 3, //0b11
-    LEFT              = 1, //0b01
-    RIGHT             = 2, //0b10
-    INVALID_DIRECTION = 3  // The sum of opposite directions will always equal INVALID_DIRECTION
+    UP    = 0, //0b00
+    DOWN  = 3, //0b11
+    LEFT  = 1, //0b01
+    RIGHT = 2, //0b10
 } direction_t;
 
 typedef enum status {
