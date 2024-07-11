@@ -39,10 +39,6 @@ thread_ret timer(void* ns_pointer) {
 
 thread_ret initialize_windows(void* args) {
     window_data_t* window_list = args;
-    initscr();
-    raw();
-    noecho();
-    curs_set(0);
     WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, (LINES - (BOARD_HEIGHT + 2)) / 2,
                                  (COLS - (BOARD_WIDTH * 2 + 2)) / 2);
     WINDOW* snake_window = derwin(game_window, BOARD_HEIGHT, BOARD_WIDTH * 2, 1, 1);

@@ -9,9 +9,14 @@
 thread_ret main_menu(void* args);
 
 int main() {
+    initscr();
+    raw();
+    noecho();
+    curs_set(0);
     window_data_t window_data;
     gameplay_data_t gameplay_data;
     thread_t misc_thread, ui_thread, gameplay_thread;
+    thread_create(&misc_thread, main_menu, NULL);
     thread_create(&ui_thread, initialize_windows, &window_data);
     thread_create(&gameplay_thread, initialize_game, &gameplay_data);
     mutex_t ui_mutex, gameplay_mutex, condition_mutex;
@@ -24,7 +29,6 @@ int main() {
         .playing_mutex = &condition_mutex
     };
     thread_join(ui_thread, NULL);
-    thread_create(&misc_thread, main_menu, NULL);
     WINDOW* game_window = window_data.game_window;
     WINDOW* snake_window = window_data.snake_window;
     thread_join(gameplay_thread, NULL);
