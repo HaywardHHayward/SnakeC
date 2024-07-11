@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "data.h"
-#include "snake.h"
 #include "threaded_fun.h"
 #include "thread_port.h"
 

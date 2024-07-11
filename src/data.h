@@ -2,17 +2,17 @@
 #define SNAKE_DATA_H
 
 #include <curses.h>
+#include <mtwister.h>
 
 #include "snake.h"
 #include "thread_port.h"
-#include "../lib/mtwister/mtwister.h"
 
 typedef struct gameplay_data {
-    MTRand seed;
     snake_t snake;
+    MTRand seed;
     coordinate_t board[BOARD_HEIGHT][BOARD_WIDTH];
     coordinate_t* current_fruit;
-    direction_t current_direction;
+    direction_t current_direction : 2;
     bool is_playing;
 } gameplay_data_t;
 

@@ -17,16 +17,19 @@ endif ()
 
 find_package(Threads REQUIRED)
 
+add_subdirectory(lib/mtwister)
+
 add_executable(Snake src/main.c
         src/snake.c
         src/threaded_fun.c
-        lib/mtwister/mtwister.c
 )
 
 if (CURSES_FOUND)
-    target_link_libraries(Snake ${CURSES_LIBRARIES})
+    target_link_libraries(Snake PRIVATE ${CURSES_LIBRARIES})
 else ()
     target_link_libraries(Snake PRIVATE PDCurses)
 endif ()
 
-target_link_libraries(Snake Threads::Threads)
+target_link_libraries(Snake PRIVATE Threads::Threads)
+
+target_link_libraries(Snake PRIVATE MTwister)

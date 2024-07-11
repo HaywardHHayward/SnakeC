@@ -6,12 +6,14 @@
 
 #define BOARD_WIDTH 30
 #define BOARD_HEIGHT 15
+#define ALL_ONES_DIRECTION 3
 
 typedef enum direction {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
+    UP                = 0, //0b00
+    DOWN              = 3, //0b11
+    LEFT              = 1, //0b01
+    RIGHT             = 2, //0b10
+    INVALID_DIRECTION = 3  // The sum of opposite directions will always equal INVALID_DIRECTION
 } direction_t;
 
 typedef enum status {
@@ -31,12 +33,10 @@ typedef struct coordinate {
 typedef struct snake {
     coordinate_t* body[BOARD_HEIGHT * BOARD_WIDTH];
     coordinate_t* head;
-    direction_t direction;
+    direction_t direction : 2;
     uint16_t length;
 } snake_t;
 
 status_t update_snake(snake_t* snake, direction_t direction, coordinate_t (*board)[BOARD_HEIGHT][BOARD_WIDTH]);
-
-void update_direction(snake_t* snake, direction_t direction);
 
 #endif //SNAKE_SNAKE_H

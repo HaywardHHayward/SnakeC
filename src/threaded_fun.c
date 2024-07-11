@@ -38,7 +38,7 @@ thread_ret timer(void* ns_pointer) {
 }
 
 thread_ret initialize_windows(void* args) {
-    window_data_t* window_list = args;
+    window_data_t* window_list = (window_data_t*)args;
     WINDOW* game_window = newwin(BOARD_HEIGHT + 2, BOARD_WIDTH * 2 + 2, (LINES - (BOARD_HEIGHT + 2)) / 2,
                                  (COLS - (BOARD_WIDTH * 2 + 2)) / 2);
     WINDOW* snake_window = derwin(game_window, BOARD_HEIGHT, BOARD_WIDTH * 2, 1, 1);
@@ -51,7 +51,7 @@ thread_ret initialize_windows(void* args) {
 }
 
 thread_ret initialize_game(void* args) {
-    gameplay_data_t* gameplay = args;
+    gameplay_data_t* gameplay = (gameplay_data_t*)args;
     gameplay->is_playing = true;
     snake_t* snake = &gameplay->snake;
     coordinate_t (*board)[BOARD_HEIGHT][BOARD_WIDTH] = &gameplay->board;
@@ -95,7 +95,7 @@ thread_ret input_loop(void* args) {
     while (true) {
         copy_is_playing(mutex_list->playing_mutex, data->gameplay->is_playing, &is_playing);
         if (!is_playing) {
-            return NULL;
+            goto exit;
         }
         mutex_lock(mutex_list->ui_mutex);
         const int key = wgetch(window);
@@ -105,7 +105,7 @@ thread_ret input_loop(void* args) {
                     wrefresh(window);
                     mutex_unlock(mutex_list->ui_mutex);
                     copy_is_playing(mutex_list->playing_mutex, false, &data->gameplay->is_playing);
-                    return NULL;
+                    goto exit;
                 case 'a':
                 case KEY_LEFT: mutex_lock(mutex_list->gameplay_mutex);
                     data->gameplay->current_direction = LEFT;
@@ -133,6 +133,8 @@ thread_ret input_loop(void* args) {
         wrefresh(window);
         mutex_unlock(mutex_list->ui_mutex);
     }
+exit:
+    return NULL;
 }
 
 thread_ret update_ui(void* args) {
@@ -172,7 +174,7 @@ thread_ret gameplay_loop(void* args) {
         copy_is_playing(data->mutex_list->playing_mutex, gameplay_data->is_playing, &is_playing);
         if (!is_playing) {
             thread_join(timer_thread, NULL);
-            return NULL;
+            goto exit;
         }
         mutex_lock(game_mutex);
         const status_t status = update_snake(&gameplay_data->snake, gameplay_data->current_direction,
@@ -192,15 +194,17 @@ thread_ret gameplay_loop(void* args) {
             mutex_unlock(game_mutex);
             copy_is_playing(data->mutex_list->playing_mutex, false, &gameplay_data->is_playing);
             thread_join(timer_thread, NULL);
-            return NULL;
+            goto exit;
         }
         if ((status & WON_GAME) == WON_GAME) {
             mutex_unlock(game_mutex);
             copy_is_playing(data->mutex_list->playing_mutex, false, &gameplay_data->is_playing);
             thread_join(timer_thread, NULL);
-            return NULL;
+            goto exit;
         }
         mutex_unlock(game_mutex);
         thread_join(timer_thread, NULL);
     }
+exit:
+    return NULL;
 }
