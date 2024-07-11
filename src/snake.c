@@ -1,33 +1,14 @@
 #include "snake.h"
 
-void update_direction(snake_t* snake, const direction_t direction) {
-    if (direction != snake->direction) {
-        switch (snake->direction) {
-            case UP:
-                if (direction != DOWN) {
-                    snake->direction = direction;
-                }
-                break;
-            case DOWN:
-                if (direction != UP) {
-                    snake->direction = direction;
-                }
-                break;
-            case LEFT:
-                if (direction != RIGHT) {
-                    snake->direction = direction;
-                }
-                break;
-            case RIGHT:
-                if (direction != LEFT) {
-                    snake->direction = direction;
-                }
-                break;
-        }
+static void update_direction(snake_t* snake, const direction_t direction) {
+    if (direction == snake->direction || direction + snake->direction == INVALID_DIRECTION) {
+        return;
     }
+    // direction_t is defined in such a way that opposite directions always sum to INVALID_DIRECTION
+    snake->direction = direction;
 }
 
-status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t board[][BOARD_WIDTH]) {
+status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t (*board)[BOARD_HEIGHT][BOARD_WIDTH]) {
     status_t status = STANDARD;
     update_direction(snake, direction);
     int16_t new_x = snake->head->x;
@@ -56,7 +37,7 @@ status_t update_snake(snake_t* snake, const direction_t direction, coordinate_t 
     } else if (new_y >= BOARD_HEIGHT) {
         new_y = 0;
     }
-    coordinate_t* new_head = &board[new_y][new_x];
+    coordinate_t* new_head = &(*board)[new_y][new_x];
     if (new_head->is_snake) {
         return HIT_SELF;
     }
