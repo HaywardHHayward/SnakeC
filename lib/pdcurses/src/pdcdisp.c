@@ -1,14 +1,14 @@
 /* PDCurses */
 
-#include "pdcwin.h"
+#include <pdcwin.h>
 
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef PDC_WIDE
-# include "../common/acsuni.h"
+# include "acsuni.h"
 #else
-# include "../common/acs437.h"
+#include "acs437.h"
 #endif
 
 DWORD pdc_last_blink;

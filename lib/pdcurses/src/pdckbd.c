@@ -1,6 +1,6 @@
 /* PDCurses */
 
-#include "pdcwin.h"
+#include <pdcwin.h>
 
 /* These variables are used to store information about the next
    Input Event. */

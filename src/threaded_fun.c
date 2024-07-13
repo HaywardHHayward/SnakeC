@@ -99,7 +99,7 @@ thread_ret input_loop(void* args) {
         }
         mutex_lock(mutex_list->ui_mutex);
         const int key = wgetch(window);
-        if (key != ERR && key != KEY_MOUSE && key != KEY_RESIZE && key != KEY_EVENT) {
+        if (key != ERR && key != KEY_MOUSE && key != KEY_RESIZE) {
             switch (key) {
                 case EXIT_KEY:
                     wrefresh(window);

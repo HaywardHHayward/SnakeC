@@ -1,6 +1,6 @@
 /* PDCurses */
 
-#include "pdcwin.h"
+#include <pdcwin.h>
 
 void PDC_beep(void)
 {
